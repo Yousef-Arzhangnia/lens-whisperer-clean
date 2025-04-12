@@ -8,15 +8,13 @@ import re
 import base64
 from flask_cors import CORS
 import os
-app = Flask(__name__)
-CORS(app)
-
 from rayoptics.environment import *
 
-isdark = True
-
 app = Flask(__name__)
+CORS(app)
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+isdark = True
 
 def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
     opm = OpticalModel()
