@@ -19,12 +19,15 @@ CORS(app)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 isdark = True  # For plot appearance
+
+# Test endpoint to verify logging
 @app.route("/test", methods=["POST"])
 def test():
-    app.logger.info("✅ /test endpoint was called")
     data = request.get_json()
-    app.logger.info(f"📦 Payload: {data}")
+    app.logger.info("✅ /test called")
+    app.logger.info("📦 Payload: %s", data)
     return jsonify({"status": "received", "data": data}), 200
+
 # Simulation function: builds and renders the optical model
 def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
     opm = OpticalModel()
@@ -51,7 +54,7 @@ def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
 # Use GPT-4 to extract float parameters from natural language
 def extract_params(prompt):
     try:
-        print("🔑 Using API Key:", os.getenv("OPENAI_API_KEY"))
+        app.logger.info("🔁 Calling extract_params with prompt: %s", prompt)
 
         response = client.chat.completions.create(
             model="gpt-4",
@@ -64,30 +67,26 @@ def extract_params(prompt):
             ]
         )
         reply = response.choices[0].message.content
-        print("🔍 GPT-4 raw reply:", reply)
+        app.logger.info("🧠 GPT-4 raw reply: %s", reply)
 
         match = re.search(r'\{.*\}', reply, re.DOTALL)
         if match:
             return eval(match.group(0))  # Simple dictionary parsing
     except Exception as e:
-        print("❌ Error in extract_params:", str(e))
+        app.logger.error("❌ Error in extract_params: %s", str(e))
 
     return None
 
 # API endpoint to trigger simulation
-@app.route("/", methods=["GET"])
-def index():
-    return "Lens Whisperer is live!", 200
-
 @app.route("/api/simulate", methods=["POST"])
 def simulate():
     try:
         data = request.get_json()
         prompt = data.get("prompt", "")
-        print("📨 Received prompt:", prompt)
+        app.logger.info("📨 Received prompt: %s", prompt)
 
         params = extract_params(prompt)
-        print("📐 Extracted parameters:", params)
+        app.logger.info("📐 Extracted parameters: %s", params)
 
         if not params:
             return jsonify({"error": "Failed to extract lens parameters."}), 400
@@ -109,8 +108,13 @@ def simulate():
         })
 
     except Exception as e:
-        print("💥 Unhandled error in /api/simulate:", str(e))
+        app.logger.error("💥 Unhandled error in /api/simulate: %s", str(e))
         return jsonify({"error": str(e)}), 500
+
+# Root route just for health check
+@app.route("/", methods=["GET"])
+def index():
+    return "Lens Whisperer is live!", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
