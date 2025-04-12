@@ -1,5 +1,5 @@
 flask
 flask-cors
-openai
 matplotlib
+openai>=1.0.0
 rayoptics
