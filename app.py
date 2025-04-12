@@ -68,6 +68,10 @@ def extract_params(prompt):
     return None
 
 # API endpoint to trigger simulation
+@app.route("/", methods=["GET"])
+def index():
+    return "Lens Whisperer is live!", 200
+
 @app.route("/api/simulate", methods=["POST"])
 def simulate():
     try:
