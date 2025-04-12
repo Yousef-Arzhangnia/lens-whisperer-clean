@@ -38,19 +38,22 @@ def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
     buf.seek(0)
     return buf
 
+
+client = openai.OpenAI()
+
 def extract_params(prompt):
-    completion = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[
             {
                 "role": "system",
-                "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary with float values."
+                "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary."
             },
             {"role": "user", "content": prompt}
         ]
     )
-    reply = completion.choices[0].message["content"]
-    print("🔍 GPT-4 raw reply:", reply)  # 🪵 This will print to the logs
+    reply = response.choices[0].message.content
+    print("🔍 GPT-4 raw reply:", reply)
 
     match = re.search(r'\{.*\}', reply, re.DOTALL)
     if match:
