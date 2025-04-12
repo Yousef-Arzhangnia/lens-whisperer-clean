@@ -57,7 +57,7 @@ def extract_params(prompt):
             return None
     return None
 
-@app.route("/simulate", methods=["POST"])
+@app.route("/api/simulate", methods=["POST"])
 def simulate():
     data = request.get_json()
     prompt = data.get("prompt", "")
