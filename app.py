@@ -39,27 +39,23 @@ def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
     return buf
 
 def extract_params(prompt):
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        reply = completion.choices[0].message["content"]
-        print("OpenAI reply:", reply)
-        match = re.search(r'\{.*\}', reply, re.DOTALL)
-        if match:
-            try:
-                return eval(match.group(0))
-            except Exception as eval_err:
-                print("Eval error:", str(eval_err))
-                return None
-        return None
-    except Exception as e:
-        print("OpenAI error:", str(e))
-        return None
+    completion = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    reply = completion.choices[0].message["content"]
+    print("GPT-4 reply:\n", reply)  # 👈 Add this line to inspect GPT's actual output
+    match = re.search(r'\{.*\}', reply, re.DOTALL)
+    if match:
+        try:
+            return eval(match.group(0))
+        except:
+            return None
+    return None
+
 
 @app.route("/api/simulate", methods=["POST"])
 def simulate():
