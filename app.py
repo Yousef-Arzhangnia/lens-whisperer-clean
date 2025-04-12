@@ -63,14 +63,17 @@ def extract_params(prompt):
 
 @app.route("/api/simulate", methods=["POST"])
 def simulate():
-    data = request.get_json()
-    prompt = data.get("prompt", "")
-    print(prompt)
-    params = extract_params(prompt)
-    if not params:
-        return jsonify({"error": "Failed to extract lens parameters."}), 400
-
     try:
+        data = request.get_json()
+        prompt = data.get("prompt", "")
+        print("Received prompt:", prompt)
+
+        params = extract_params(prompt)
+        print("Extracted parameters:", params)
+
+        if not params:
+            return jsonify({"error": "Failed to extract lens parameters."}), 400
+
         img_buf = gen_sim(
             params["curve1"],
             params["curve2"],
@@ -88,6 +91,7 @@ def simulate():
         })
 
     except Exception as e:
+        print("Unhandled error in /api/simulate:", str(e))
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
