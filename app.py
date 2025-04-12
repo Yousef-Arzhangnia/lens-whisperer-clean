@@ -42,20 +42,24 @@ def extract_params(prompt):
     completion = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary."},
+            {
+                "role": "system",
+                "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary with float values."
+            },
             {"role": "user", "content": prompt}
         ]
     )
     reply = completion.choices[0].message["content"]
-    print("GPT-4 reply:\n", reply)  # 👈 Add this line to inspect GPT's actual output
+    print("🔍 GPT-4 raw reply:", reply)  # 🪵 This will print to the logs
+
     match = re.search(r'\{.*\}', reply, re.DOTALL)
     if match:
         try:
             return eval(match.group(0))
-        except:
+        except Exception as e:
+            print("❌ eval failed:", e)
             return None
     return None
-
 
 @app.route("/api/simulate", methods=["POST"])
 def simulate():
