@@ -46,6 +46,8 @@ def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
 # Use GPT-4 to extract float parameters from natural language
 def extract_params(prompt):
     try:
+        print("🔑 Using API Key:", os.getenv("OPENAI_API_KEY"))
+
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
