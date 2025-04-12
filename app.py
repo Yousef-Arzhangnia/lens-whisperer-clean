@@ -19,6 +19,12 @@ CORS(app)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 isdark = True  # For plot appearance
+@app.route("/test", methods=["POST"])
+def test():
+    print("✅ /test endpoint was called")
+    data = request.get_json()
+    print("📦 Payload:", data)
+    return jsonify({"status": "received", "data": data}), 200
 
 # Simulation function: builds and renders the optical model
 def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
