@@ -1,21 +1,26 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from io import BytesIO
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import openai
+from openai import OpenAI
 import re
 import base64
-from flask_cors import CORS
 import os
+
 from rayoptics.environment import *
 
+# Initialize Flask app and enable CORS
 app = Flask(__name__)
 CORS(app)
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
-isdark = True
+# Initialize OpenAI client using environment variable
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+isdark = True  # For plot appearance
+
+# Simulation function: builds and renders the optical model
 def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
     opm = OpticalModel()
     sm = opm['seq_model']
@@ -38,41 +43,40 @@ def gen_sim(curve1, curve2, width, diameter, dist_object_lens, dist_lens_image):
     buf.seek(0)
     return buf
 
-
-client = openai.OpenAI()
-
+# Use GPT-4 to extract float parameters from natural language
 def extract_params(prompt):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {
-                "role": "system",
-                "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary."
-            },
-            {"role": "user", "content": prompt}
-        ]
-    )
-    reply = response.choices[0].message.content
-    print("🔍 GPT-4 raw reply:", reply)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Extract these 6 float values from the text: curve1, curve2, width, diameter, dist_object_lens, dist_lens_image. Return only a Python dictionary."
+                },
+                {"role": "user", "content": prompt}
+            ]
+        )
+        reply = response.choices[0].message.content
+        print("🔍 GPT-4 raw reply:", reply)
 
-    match = re.search(r'\{.*\}', reply, re.DOTALL)
-    if match:
-        try:
-            return eval(match.group(0))
-        except Exception as e:
-            print("❌ eval failed:", e)
-            return None
+        match = re.search(r'\{.*\}', reply, re.DOTALL)
+        if match:
+            return eval(match.group(0))  # Simple dictionary parsing
+    except Exception as e:
+        print("❌ Error in extract_params:", str(e))
+
     return None
 
+# API endpoint to trigger simulation
 @app.route("/api/simulate", methods=["POST"])
 def simulate():
     try:
         data = request.get_json()
         prompt = data.get("prompt", "")
-        print("Received prompt:", prompt)
+        print("📨 Received prompt:", prompt)
 
         params = extract_params(prompt)
-        print("Extracted parameters:", params)
+        print("📐 Extracted parameters:", params)
 
         if not params:
             return jsonify({"error": "Failed to extract lens parameters."}), 400
@@ -94,8 +98,9 @@ def simulate():
         })
 
     except Exception as e:
-        print("Unhandled error in /api/simulate:", str(e))
+        print("💥 Unhandled error in /api/simulate:", str(e))
         return jsonify({"error": str(e)}), 500
 
+# Start the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
